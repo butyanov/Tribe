@@ -13,6 +13,16 @@ services.AddAuth();
 services.AddEndpointsApiExplorer();
 services.AddSwagger();
 
+services.AddCors(o =>
+{
+    o.AddDefaultPolicy(b =>
+    {
+        b.AllowAnyMethod()
+            .AllowCredentials()
+            .AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
 app.UseMiddleware<ValidationMiddleware>();
