@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace Tribe.Core.Models.User;
+namespace Tribe.Domain.Models.User;
 
 public sealed class ApplicationUser : IdentityUser<Guid>
 {

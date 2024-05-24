@@ -1,13 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Tribe.Data;
+using Tribe.Domain.Database;
 
 namespace Tribe.Api.Configuration;
 
 public static class ConfigureDatabase
 {
     public static void AddDataContext(this WebApplicationBuilder builder)
-    => builder.Services.AddDbContext<DataContext>(x =>
+    => builder.Services.AddDbContext<IDataContext, DataContext>(x =>
         x.UseNpgsql(builder.Configuration.GetConnectionString("PostgresConnectionString")));
 
     public static async Task Migrate(this WebApplication app)

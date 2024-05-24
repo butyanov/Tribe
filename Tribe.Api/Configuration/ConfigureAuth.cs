@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
-using Tribe.Core.Models.User;
 using Tribe.Data;
+using Tribe.Domain.Models.User;
 
 namespace Tribe.Api.Configuration;
 

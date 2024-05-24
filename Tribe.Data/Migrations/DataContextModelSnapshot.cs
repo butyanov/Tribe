@@ -152,7 +152,55 @@ namespace Tribe.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("Tribe.Core.Models.User.ApplicationUser", b =>
+            modelBuilder.Entity("Tribe.Domain.Models.Task.Task", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("CreatorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("PerformerId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatorId");
+
+                    b.HasIndex("PerformerId");
+
+                    b.ToTable("Tasks");
+                });
+
+            modelBuilder.Entity("Tribe.Domain.Models.Tribe.Tribe", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Positions")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Tribes");
+                });
+
+            modelBuilder.Entity("Tribe.Domain.Models.User.ApplicationUser", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -198,6 +246,9 @@ namespace Tribe.Data.Migrations
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("TribeId")
+                        .HasColumnType("uuid");
+
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("boolean");
 
@@ -214,6 +265,8 @@ namespace Tribe.Data.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
 
+                    b.HasIndex("TribeId");
+
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
@@ -228,7 +281,7 @@ namespace Tribe.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
                 {
-                    b.HasOne("Tribe.Core.Models.User.ApplicationUser", null)
+                    b.HasOne("Tribe.Domain.Models.User.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -237,7 +290,7 @@ namespace Tribe.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
                 {
-                    b.HasOne("Tribe.Core.Models.User.ApplicationUser", null)
+                    b.HasOne("Tribe.Domain.Models.User.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -252,7 +305,7 @@ namespace Tribe.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Tribe.Core.Models.User.ApplicationUser", null)
+                    b.HasOne("Tribe.Domain.Models.User.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -261,11 +314,42 @@ namespace Tribe.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
                 {
-                    b.HasOne("Tribe.Core.Models.User.ApplicationUser", null)
+                    b.HasOne("Tribe.Domain.Models.User.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Tribe.Domain.Models.Task.Task", b =>
+                {
+                    b.HasOne("Tribe.Domain.Models.User.ApplicationUser", "Creator")
+                        .WithMany()
+                        .HasForeignKey("CreatorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Tribe.Domain.Models.User.ApplicationUser", "Performer")
+                        .WithMany()
+                        .HasForeignKey("PerformerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Creator");
+
+                    b.Navigation("Performer");
+                });
+
+            modelBuilder.Entity("Tribe.Domain.Models.User.ApplicationUser", b =>
+                {
+                    b.HasOne("Tribe.Domain.Models.Tribe.Tribe", null)
+                        .WithMany("Participants")
+                        .HasForeignKey("TribeId");
+                });
+
+            modelBuilder.Entity("Tribe.Domain.Models.Tribe.Tribe", b =>
+                {
+                    b.Navigation("Participants");
                 });
 #pragma warning restore 612, 618
         }

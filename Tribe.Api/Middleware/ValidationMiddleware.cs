@@ -1,9 +1,8 @@
-using FluentValidation;
-using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using Tribe.Infra.Contracts.Responses;
+using ValidationException = FluentValidation.ValidationException;
 
-namespace Tribe.Infra.Middleware;
+namespace Tribe.Api.Middleware;
 
 public class ValidationMiddleware(RequestDelegate request)
 {

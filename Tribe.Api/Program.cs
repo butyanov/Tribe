@@ -1,6 +1,6 @@
 using Tribe.Api.Configuration;
-using Tribe.Core.Models.User;
-using Tribe.Infra.Middleware;
+using Tribe.Api.Middleware;
+using Tribe.Domain.Models.User;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +25,7 @@ services.AddCors(o =>
 
 var app = builder.Build();
 
+app.UseMiddleware<TransactionsMiddleware>();
 app.UseMiddleware<ValidationMiddleware>();
 
 await app.Migrate();

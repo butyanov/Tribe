@@ -1,4 +1,4 @@
-namespace Tribe.Core.Models;
+namespace Tribe.Domain.Models;
 
 public class BaseEntity
 {
