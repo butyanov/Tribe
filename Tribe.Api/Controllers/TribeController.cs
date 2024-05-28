@@ -56,7 +56,6 @@ public class TribeController(ITribeFacade tribeFacade) : ControllerBase
     {
         var tribeDto = new TribeDto
         {
-            CreatorId = request.CreatorId,
             Name = request.Name,
             ParticipantsIds = request.ParticipantsIds,
             Positions = request.Positions

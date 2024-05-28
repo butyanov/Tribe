@@ -20,15 +20,7 @@ services.AddControllers();
 services.AddEndpointsApiExplorer();
 services.AddSwagger();
 
-services.AddCors(o =>
-{
-    o.AddDefaultPolicy(b =>
-    {
-        b.AllowAnyMethod()
-            .AllowCredentials()
-            .AllowAnyHeader();
-    });
-});
+services.AddCors();
 
 var app = builder.Build();
 
@@ -45,6 +37,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors(option =>
+{
+    option.AllowAnyHeader();
+    option.AllowAnyMethod();
+    option.AllowCredentials();
+    option.SetIsOriginAllowed(origin => true);
+});
 
 app.UseHttpsRedirection();
 
