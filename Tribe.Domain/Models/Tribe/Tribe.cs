@@ -4,7 +4,9 @@ namespace Tribe.Domain.Models.Tribe;
 
 public class Tribe : BaseEntity
 {
-    public string Name { get; set; }
-    public IEnumerable<ApplicationUser> Participants { get; set; }
-    public IEnumerable<UserPosition> Positions { get; set; }
+    public required string Name { get; set; }
+    public required Guid CreatorId { get; set; }
+    public required ApplicationUser Creator { get; set; }
+    public required ICollection<ApplicationUser> Participants { get; set; }
+    public required IEnumerable<UserPosition> Positions { get; set; }
 }

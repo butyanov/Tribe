@@ -1,4 +1,4 @@
-namespace Tribe.Infra.Contracts.Responses;
+namespace Tribe.Api.Contracts;
 
 public class ValidationFailureResponse
 {

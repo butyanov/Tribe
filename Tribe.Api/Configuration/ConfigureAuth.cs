@@ -17,9 +17,6 @@ public static class ConfigureAuth
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequiredLength = 8;
                 options.Password.RequiredUniqueChars = 1;
-                
-                options.User.AllowedUserNameCharacters =
-                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_";
             })
             .AddEntityFrameworkStores<DataContext>()
             .AddApiEndpoints();

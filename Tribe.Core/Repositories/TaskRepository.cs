@@ -1,38 +1,62 @@
-using Tribe.Core.Mappers.DtoToModel;
+using Microsoft.EntityFrameworkCore;
 using Tribe.Domain.Database;
-using Tribe.Domain.Dto;
 using Tribe.Domain.Repositories;
+using TaskModel = Tribe.Domain.Models.Task.Task;
 
 namespace Tribe.Core.Repositories;
 
 public class TaskRepository(IDataContext dataContext) : ITaskRepository
 {
-    public async Task<bool> CreateAsync(TaskDto task, CancellationToken cancellationToken)
+    public async Task<bool> CreateAsync(TaskModel task, CancellationToken cancellationToken)
     {
-        var taskModel = task.ToModel();
-
-        await dataContext.Tasks.AddAsync(taskModel, cancellationToken);
-
+        await dataContext.Tasks.AddAsync(task, cancellationToken);
+        
         return await dataContext.SaveEntitiesAsync(cancellationToken);
     }
 
-    public TaskDto UpdateAsync(TaskDto task, CancellationToken cancellationToken)
+    public async Task<TaskModel?> UpdateAsync(TaskModel task, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var currentTask = await dataContext.Tasks.FirstOrDefaultAsync(x => x.Id == task.Id, cancellationToken);
+        if (currentTask == null)
+            return default;
+        
+        currentTask.Name = task.Name;
+        currentTask.Content = task.Content;
+        
+        await dataContext.SaveEntitiesAsync(cancellationToken);
+
+        return currentTask;
     }
 
-    public TaskDto GetByIdAsync(Guid taskId, CancellationToken cancellationToken)
+    public async Task<TaskModel?> GetByIdAsync(Guid taskId, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        return await dataContext.Tasks
+            .Include(x => x.Creator)
+            .Include(x => x.Tribe)
+            .Include(x => x.Performer)
+            .FirstOrDefaultAsync(x => x.Id == taskId, cancellationToken);
     }
 
-    public IEnumerable<TaskDto> GetByUserAndTribeAsync(Guid userId, CancellationToken cancellationToken)
+    public async Task<IEnumerable<TaskModel>> GetGivenAsync(Guid userId, Guid tribeId, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        return await dataContext.Tasks.Where(x => x.Creator.Id == userId && x.Tribe.Id == tribeId)
+            .ToListAsync(cancellationToken);
+    }
+    
+    public async Task<IEnumerable<TaskModel>> GetTakenAsync(Guid userId, Guid tribeId, CancellationToken cancellationToken)
+    {
+        return await dataContext.Tasks.Where(x => x.Performer.Id == userId && x.Tribe.Id == tribeId)
+            .ToListAsync(cancellationToken);
     }
 
-    public Task<bool> DeleteAsync(Guid taskId, CancellationToken cancellationToken)
+    public async Task<bool> DeleteAsync(Guid taskId, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var taskToDelete = await dataContext.Tasks.FirstOrDefaultAsync(x => x.Id == taskId, cancellationToken);
+        if (taskToDelete == default)
+            return false;
+        
+        dataContext.Tasks.Remove(taskToDelete);
+
+        return await dataContext.SaveEntitiesAsync(cancellationToken);
     }
 }

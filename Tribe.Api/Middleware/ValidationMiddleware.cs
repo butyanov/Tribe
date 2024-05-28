@@ -1,5 +1,5 @@
 using Newtonsoft.Json;
-using Tribe.Infra.Contracts.Responses;
+using Tribe.Api.Contracts;
 using ValidationException = FluentValidation.ValidationException;
 
 namespace Tribe.Api.Middleware;

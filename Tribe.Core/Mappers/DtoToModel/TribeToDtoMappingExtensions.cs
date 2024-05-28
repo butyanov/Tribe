@@ -1,4 +1,5 @@
 using Tribe.Domain.Dto;
+using Tribe.Domain.Models.User;
 using TribeModel = Tribe.Domain.Models.Tribe.Tribe;
 
 namespace Tribe.Core.Mappers.DtoToModel;
@@ -11,18 +12,23 @@ public static class TribeToDtoMappingExtensions
         {
             Id = tribe.Id,
             Name = tribe.Name,
-            Participants = tribe.Participants,
-            Positions = tribe.Positions
+            CreatorId = tribe.Creator.Id,
+            ParticipantsIds = tribe.Participants.Select(x => x.Id).ToArray(),
+            Positions = tribe.Positions.ToArray()
         };
     }
-    
-    public static TribeModel ToModel(this TribeDto tribeDto)
+
+    public static TribeModel ToModel(this TribeDto tribeDto, ApplicationUser creator,
+        IEnumerable<ApplicationUser> participants)
+
     {
         return new TribeModel
         {
             Name = tribeDto.Name,
-            Participants = tribeDto.Participants,
-            Positions = tribeDto.Positions
+            Creator = creator,
+            Participants = participants.ToArray(),
+            Positions = tribeDto.Positions,
+            CreatorId = creator.Id
         };
     }
 }
