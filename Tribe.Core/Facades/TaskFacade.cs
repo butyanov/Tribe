@@ -47,9 +47,7 @@ public class TaskFacade(ITaskRepository taskRepository, ITribeRepository tribeRe
     public async Task<bool> GiveTaskAsync(TaskDto taskDto, CancellationToken cancellationToken)
     {
         var userId = userService.GetUserIdOrThrow();
-        if (userId != taskDto.CreatorId)
-            throw new HttpRequestException(HttpRequestError.Unknown,
-                statusCode: HttpStatusCode.Forbidden, message: "Not enough rights");
+        taskDto.CreatorId = userId; 
         
         var tribe = await tribeRepository.GetByIdAsync(taskDto.TribeId, cancellationToken)
                     ?? throw new HttpRequestException(HttpRequestError.Unknown,

@@ -39,13 +39,21 @@ public class TaskRepository(IDataContext dataContext) : ITaskRepository
 
     public async Task<IEnumerable<TaskModel>> GetGivenAsync(Guid userId, Guid tribeId, CancellationToken cancellationToken)
     {
-        return await dataContext.Tasks.Where(x => x.Creator.Id == userId && x.Tribe.Id == tribeId)
+        return await dataContext.Tasks
+            .Include(x => x.Creator)
+            .Include(x => x.Tribe)
+            .Include(x => x.Performer)
+            .Where(x => x.Creator.Id == userId && x.Tribe.Id == tribeId)
             .ToListAsync(cancellationToken);
     }
     
     public async Task<IEnumerable<TaskModel>> GetTakenAsync(Guid userId, Guid tribeId, CancellationToken cancellationToken)
     {
-        return await dataContext.Tasks.Where(x => x.Performer.Id == userId && x.Tribe.Id == tribeId)
+        return await dataContext.Tasks
+            .Include(x => x.Creator)
+            .Include(x => x.Tribe)
+            .Include(x => x.Performer)
+            .Where(x => x.Performer.Id == userId && x.Tribe.Id == tribeId)
             .ToListAsync(cancellationToken);
     }
 

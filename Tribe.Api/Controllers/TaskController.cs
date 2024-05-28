@@ -86,7 +86,6 @@ public class TaskController(ITaskFacade taskFacade) : ControllerBase
             Name = request.Name,
             Content = request.Content,
             TribeId = request.TribeId,
-            CreatorId = request.CreatorId,
             PerformerId = request.PerformerId
         };
         
@@ -160,7 +159,7 @@ public class TaskController(ITaskFacade taskFacade) : ControllerBase
     
     [Authorize]
     [HttpDelete]
-    [Route("delete/{tribeId:guid}")]    
+    [Route("delete/{taskId:guid}")]    
     public async Task<IActionResult> DeleteTribe([FromRoute] Guid taskId, CancellationToken cancellationToken)
     {
         await taskFacade.DeleteAsync(taskId, cancellationToken);
