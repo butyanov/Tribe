@@ -15,5 +15,7 @@ public abstract class DependencyInjectedEntityConfiguration<TEntity>
     public abstract void Configure(EntityTypeBuilder<TEntity> builder);
 
     public sealed override void Configure(ModelBuilder modelBuilder)
-        => Configure(modelBuilder.Entity<TEntity>());
+    {
+        Configure(modelBuilder.Entity<TEntity>());
+    }
 }

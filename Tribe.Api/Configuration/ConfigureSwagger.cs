@@ -4,11 +4,12 @@ namespace Tribe.Api.Configuration;
 
 public static class ConfigureSwagger
 {
-    public static void AddSwagger(this IServiceCollection services) =>
+    public static void AddSwagger(this IServiceCollection services)
+    {
         services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "Tribe API", Version = "v1" });
-    
+
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 In = ParameterLocation.Header,
@@ -33,4 +34,5 @@ public static class ConfigureSwagger
                 }
             });
         });
+    }
 }

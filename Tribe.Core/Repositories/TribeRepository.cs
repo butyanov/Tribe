@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Tribe.Domain.Database;
 using Tribe.Domain.Repositories;
 using TribeModel = Tribe.Domain.Models.Tribe.Tribe;
+
 namespace Tribe.Core.Repositories;
 
 public class TribeRepository(IDataContext dataContext) : ITribeRepository
@@ -9,7 +10,7 @@ public class TribeRepository(IDataContext dataContext) : ITribeRepository
     public async Task<bool> CreateAsync(TribeModel tribe, CancellationToken cancellationToken)
     {
         await dataContext.Tribes.AddAsync(tribe, cancellationToken);
-        
+
         return await dataContext.SaveEntitiesAsync(cancellationToken);
     }
 
@@ -18,11 +19,11 @@ public class TribeRepository(IDataContext dataContext) : ITribeRepository
         var currentTribe = await dataContext.Tribes.FirstOrDefaultAsync(x => x.Id == tribe.Id, cancellationToken);
         if (currentTribe == null)
             return default;
-        
+
         currentTribe.Name = tribe.Name;
         currentTribe.Positions = tribe.Positions;
         currentTribe.Participants = tribe.Participants;
-        
+
         await dataContext.SaveEntitiesAsync(cancellationToken);
 
         return currentTribe;
@@ -46,7 +47,7 @@ public class TribeRepository(IDataContext dataContext) : ITribeRepository
         var tribeToDelete = await dataContext.Tribes.FirstOrDefaultAsync(x => x.Id == tribeId, cancellationToken);
         if (tribeToDelete == default)
             return false;
-        
+
         dataContext.Tribes.Remove(tribeToDelete);
 
         return await dataContext.SaveEntitiesAsync(cancellationToken);

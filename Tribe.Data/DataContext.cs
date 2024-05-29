@@ -9,11 +9,20 @@ using TribeModel = Tribe.Domain.Models.Tribe.Tribe;
 
 namespace Tribe.Data;
 
-public class DataContext(DbContextOptions<DataContext> options, IEnumerable<DependencyInjectedEntityConfiguration> configurations)
+public class DataContext(
+    DbContextOptions<DataContext> options,
+    IEnumerable<DependencyInjectedEntityConfiguration> configurations)
     : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>(options), IDataContext
 {
     public DbSet<TribeModel> Tribes { get; set; }
     public DbSet<TaskModel> Tasks { get; set; }
+
+    public async Task<bool> SaveEntitiesAsync(CancellationToken cancellationToken = default)
+    {
+        var result = await base.SaveChangesAsync(cancellationToken);
+
+        return result > 0;
+    }
 
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -22,12 +31,5 @@ public class DataContext(DbContextOptions<DataContext> options, IEnumerable<Depe
 
         foreach (var config in configurations)
             config.Configure(builder);
-    }
-
-    public async Task<bool> SaveEntitiesAsync(CancellationToken cancellationToken = default)
-    {
-        var result = await base.SaveChangesAsync(cancellationToken);
-
-        return result > 0;
     }
 }

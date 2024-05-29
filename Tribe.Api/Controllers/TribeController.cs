@@ -9,17 +9,17 @@ namespace Tribe.Api.Controllers;
 
 // TODO: Написать валидаторы
 [ApiController]
-[Route($"tribes")]
+[Route("tribes")]
 public class TribeController(ITribeFacade tribeFacade) : ControllerBase
 {
     [Authorize]
     [HttpGet]
-    [Route("get/{tribeId:guid}")]    
+    [Route("get/{tribeId:guid}")]
     public async Task<TribeResponse> GetMyTribe([FromRoute] Guid tribeId, CancellationToken cancellationToken)
     {
         var tribe = await tribeFacade.GetMyTribeAsync(tribeId, cancellationToken);
 
-        var tribeResponse = new TribeResponse()
+        var tribeResponse = new TribeResponse
         {
             Id = tribe.Id,
             CreatorId = tribe.CreatorId,
@@ -30,28 +30,29 @@ public class TribeController(ITribeFacade tribeFacade) : ControllerBase
 
         return tribeResponse;
     }
+
     [Authorize]
     [HttpGet]
-    [Route("get-all")]    
+    [Route("get-all")]
     public async Task<IReadOnlyCollection<TribeResponse>> GetAllMyTribes(CancellationToken cancellationToken)
     {
         var tribes = await tribeFacade.GetAllMyTribesAsync(cancellationToken);
-        
-        var tribesResponse = tribes.Select(tribe => new TribeResponse()
+
+        var tribesResponse = tribes.Select(tribe => new TribeResponse
         {
-                Id = tribe.Id,
-                CreatorId = tribe.CreatorId,
-                Name = tribe.Name,
-                ParticipantsIds = tribe.ParticipantsIds,
-                Positions = tribe.Positions
+            Id = tribe.Id,
+            CreatorId = tribe.CreatorId,
+            Name = tribe.Name,
+            ParticipantsIds = tribe.ParticipantsIds,
+            Positions = tribe.Positions
         }).ToArray();
 
         return tribesResponse;
     }
-    
+
     [Authorize]
     [HttpPost]
-    [Route("create")]    
+    [Route("create")]
     public async Task<IActionResult> CreateTribe([FromBody] TribeRequest request, CancellationToken cancellationToken)
     {
         var tribeDto = new TribeDto
@@ -64,37 +65,39 @@ public class TribeController(ITribeFacade tribeFacade) : ControllerBase
 
         return Ok();
     }
-    
+
     [Authorize]
     [HttpPut]
-    [Route("add-user")]    
-    public async Task<IActionResult> InviteUser([FromBody] InviteUserRequest request, CancellationToken cancellationToken)
+    [Route("add-user")]
+    public async Task<IActionResult> InviteUser([FromBody] InviteUserRequest request,
+        CancellationToken cancellationToken)
     {
-        await tribeFacade.AddUserAsync(request.TribeId, request.UserId, request.Leads, request.Subordinates, cancellationToken);
+        await tribeFacade.AddUserAsync(request.TribeId, request.UserId, request.Leads, request.Subordinates,
+            cancellationToken);
         return Ok();
     }
-    
+
     [Authorize]
     [HttpPut]
-    [Route("kick-user")]    
+    [Route("kick-user")]
     public async Task<IActionResult> KickUser([FromBody] KickUserRequest request, CancellationToken cancellationToken)
     {
         await tribeFacade.KickUserAsync(request.TribeId, request.UserId, cancellationToken);
         return Ok();
     }
-    
+
     [Authorize]
     [HttpPut]
-    [Route("change-name")]    
+    [Route("change-name")]
     public async Task<IActionResult> KickUser([FromBody] ChangeNameRequest request, CancellationToken cancellationToken)
     {
         await tribeFacade.ChangeNameAsync(request.TribeId, request.NewName, cancellationToken);
         return Ok();
     }
-    
+
     [Authorize]
     [HttpDelete]
-    [Route("delete/{tribeId:guid}")]    
+    [Route("delete/{tribeId:guid}")]
     public async Task<IActionResult> DeleteTribe([FromRoute] Guid tribeId, CancellationToken cancellationToken)
     {
         await tribeFacade.DeleteAsync(tribeId, cancellationToken);

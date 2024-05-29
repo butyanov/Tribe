@@ -5,8 +5,10 @@ namespace Tribe.Api.Configuration;
 
 public static class ConfigureEntitiesConfiguration
 {
-    public static void AddCustomEntitiesConfiguration(this IServiceCollection services) =>
+    public static void AddCustomEntitiesConfiguration(this IServiceCollection services)
+    {
         services
             .AddSingleton<DependencyInjectedEntityConfiguration, TaskConfiguration>()
             .AddSingleton<DependencyInjectedEntityConfiguration, TribeConfiguration>();
+    }
 }

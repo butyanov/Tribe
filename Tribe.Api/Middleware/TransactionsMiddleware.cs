@@ -12,7 +12,7 @@ public class TransactionsMiddleware(ILogger<TransactionsMiddleware> logger, Requ
             async () =>
             {
                 await using var transaction = await dbContext.Database.BeginTransactionAsync();
-        
+
                 try
                 {
                     logger.LogInformation($"Begin transaction {transaction.TransactionId}");
@@ -22,7 +22,6 @@ public class TransactionsMiddleware(ILogger<TransactionsMiddleware> logger, Requ
                     await transaction.CommitAsync();
 
                     logger.LogInformation($"Committed transaction {transaction.TransactionId}");
-                    
                 }
                 catch (Exception e)
                 {

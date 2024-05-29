@@ -11,7 +11,7 @@ public static class ConfigureAuth
         services.AddAuthentication()
             .AddBearerToken(IdentityConstants.BearerScheme);
         services.AddAuthorizationBuilder();
-        
+
         services.AddIdentityCore<ApplicationUser>(options =>
             {
                 options.Password.RequireNonAlphanumeric = false;

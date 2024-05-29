@@ -1,9 +1,9 @@
 ﻿services:
-#  tribe.api:
-#    image: tribe.api
-#    build:
-#      context: .
-#      dockerfile: Tribe.Api/Dockerfile
+  #  tribe.api:
+  #    image: tribe.api
+  #    build:
+  #      context: .
+  #      dockerfile: Tribe.Api/Dockerfile
   postgres:
     image: postgres:alpine
     ports:

@@ -1,10 +1,9 @@
-using System.Net;
-using Microsoft.AspNetCore.Identity;
+using Tribe.Core.ClientExceptions;
 using Tribe.Core.Mappers.DtoToModel;
 using Tribe.Domain.Dto;
 using Tribe.Domain.Facades;
 using Tribe.Domain.Models.Task;
-using Tribe.Domain.Models.User;
+using Tribe.Domain.Models.Tribe;
 using Tribe.Domain.Repositories;
 using Tribe.Domain.Services;
 using TaskModel = Tribe.Domain.Models.Task.Task;
@@ -12,34 +11,38 @@ using TaskStatus = Tribe.Domain.Models.Task.TaskStatus;
 
 namespace Tribe.Core.Facades;
 
-public class TaskFacade(ITaskRepository taskRepository, ITribeRepository tribeRepository, UserManager<ApplicationUser> userManager, IUserService userService) : ITaskFacade
+public class TaskFacade(ITaskRepository taskRepository, ITribeRepository tribeRepository, IUserService userService)
+    : ITaskFacade
 {
     public async Task<TaskDto> GetMyTaskAsync(Guid taskId, CancellationToken cancellationToken)
     {
         var task = (await GetByIdOrThrowAsync(taskId, cancellationToken)).ToDto();
         var userId = userService.GetUserIdOrThrow();
-        
+
         if (task.CreatorId != userId && task.PerformerId != userId)
-            throw new HttpRequestException(HttpRequestError.Unknown,
-                statusCode: HttpStatusCode.NotFound, message: "Entity not found");
+            throw new NotFoundException<TaskModel>();
 
         return task;
     }
 
-    public async Task<IReadOnlyCollection<TaskDto>> GetAllGivenTasksAsync(Guid tribeId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<TaskDto>> GetAllGivenTasksAsync(Guid tribeId,
+        CancellationToken cancellationToken)
     {
         var userId = userService.GetUserIdOrThrow();
 
-        var givenTasks = (await taskRepository.GetGivenAsync(userId, tribeId, cancellationToken)).Select(x => x.ToDto());
+        var givenTasks =
+            (await taskRepository.GetGivenAsync(userId, tribeId, cancellationToken)).Select(x => x.ToDto());
 
         return givenTasks.ToArray();
     }
 
-    public async Task<IReadOnlyCollection<TaskDto>> GetAllTakenTasksAsync(Guid tribeId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<TaskDto>> GetAllTakenTasksAsync(Guid tribeId,
+        CancellationToken cancellationToken)
     {
         var userId = userService.GetUserIdOrThrow();
 
-        var takenTasks = (await taskRepository.GetTakenAsync(userId, tribeId, cancellationToken)).Select(x => x.ToDto());
+        var takenTasks =
+            (await taskRepository.GetTakenAsync(userId, tribeId, cancellationToken)).Select(x => x.ToDto());
 
         return takenTasks.ToArray();
     }
@@ -47,19 +50,16 @@ public class TaskFacade(ITaskRepository taskRepository, ITribeRepository tribeRe
     public async Task<bool> GiveTaskAsync(TaskDto taskDto, CancellationToken cancellationToken)
     {
         var userId = userService.GetUserIdOrThrow();
-        taskDto.CreatorId = userId; 
-        
-        var tribe = await tribeRepository.GetByIdAsync(taskDto.TribeId, cancellationToken)
-                    ?? throw new HttpRequestException(HttpRequestError.Unknown,
-                statusCode: HttpStatusCode.NotFound, message: "Entity not found");
+        taskDto.CreatorId = userId;
 
-        var performerPosition = tribe.Positions.FirstOrDefault(x => x.UserId == taskDto.PerformerId) 
-                                ?? throw new HttpRequestException(HttpRequestError.Unknown,
-                                    statusCode: HttpStatusCode.NotFound, message: "Entity not found");
-        
+        var tribe = await tribeRepository.GetByIdAsync(taskDto.TribeId, cancellationToken)
+                    ?? throw new NotFoundException<TaskModel>();
+
+        var performerPosition = tribe.Positions.FirstOrDefault(x => x.UserId == taskDto.PerformerId)
+                                ?? throw new NotFoundException<UserPosition>();
+
         if (performerPosition.ParentIds.All(x => x != userId))
-            throw new HttpRequestException(HttpRequestError.Unknown,
-                statusCode: HttpStatusCode.Forbidden, message: "Not enough rights");
+            throw new ForbiddenException("FORBIDDEN");
 
         var creator = tribe.Participants.First(u => u.Id == taskDto.CreatorId);
         var performer = tribe.Participants.First(u => u.Id == taskDto.PerformerId);
@@ -71,46 +71,41 @@ public class TaskFacade(ITaskRepository taskRepository, ITribeRepository tribeRe
     {
         var creatorId = userService.GetUserIdOrThrow();
         var taskModel = await GetByIdOrThrowAsync(taskId, cancellationToken);
-        var taskDto = taskModel.ToDto();
-        
-        if (!IsTaskCreator(taskDto, creatorId))
-            throw new HttpRequestException(HttpRequestError.Unknown,
-                statusCode: HttpStatusCode.Forbidden, message: "Not enough rights");
+
+        ValidateTaskCreatorRights(taskModel.ToDto(), creatorId);
 
         taskModel.Name = newName;
-        
+
         await taskRepository.UpdateAsync(taskModel, cancellationToken);
 
         return true;
     }
 
-    public async Task<TaskDto> UpdateTaskContentAsync(Guid taskId, TaskContent taskContent, CancellationToken cancellationToken)
+    public async Task<TaskDto> UpdateTaskContentAsync(Guid taskId, TaskContent taskContent,
+        CancellationToken cancellationToken)
     {
         var creatorId = userService.GetUserIdOrThrow();
         var taskModel = await GetByIdOrThrowAsync(taskId, cancellationToken);
-        
-        if (!IsTaskCreator(taskModel.ToDto(), creatorId))
-            throw new HttpRequestException(HttpRequestError.Unknown,
-                statusCode: HttpStatusCode.Forbidden, message: "Not enough rights");
+
+        ValidateTaskCreatorRights(taskModel.ToDto(), creatorId);
 
         taskModel.Content = taskContent;
-        
+
         await taskRepository.UpdateAsync(taskModel, cancellationToken);
 
         return taskModel.ToDto();
     }
-    
-    public async Task<TaskDto> UpdateTaskStatusAsync(Guid taskId, TaskStatus taskStatus, CancellationToken cancellationToken)
+
+    public async Task<TaskDto> UpdateTaskStatusAsync(Guid taskId, TaskStatus taskStatus,
+        CancellationToken cancellationToken)
     {
         var performerId = userService.GetUserIdOrThrow();
         var taskModel = await GetByIdOrThrowAsync(taskId, cancellationToken);
-        
-        if (!IsTaskPerformer(taskModel.ToDto(), performerId))
-            throw new HttpRequestException(HttpRequestError.Unknown,
-                statusCode: HttpStatusCode.Forbidden, message: "Not enough rights");
+
+        ValidateTaskPerformerRights(taskModel.ToDto(), performerId);
 
         taskModel.Status = taskStatus;
-        
+
         await taskRepository.UpdateAsync(taskModel, cancellationToken);
 
         return taskModel.ToDto();
@@ -120,25 +115,30 @@ public class TaskFacade(ITaskRepository taskRepository, ITribeRepository tribeRe
     {
         var creatorId = userService.GetUserIdOrThrow();
         var taskDto = (await GetByIdOrThrowAsync(taskId, cancellationToken)).ToDto();
-        
-        if (!IsTaskCreator(taskDto, creatorId))
-            throw new HttpRequestException(HttpRequestError.Unknown,
-                statusCode: HttpStatusCode.Forbidden, message: "Not enough rights");
+
+        ValidateTaskCreatorRights(taskDto, creatorId);
 
         return await taskRepository.DeleteAsync(taskDto.Id, cancellationToken);
     }
-    
-    
+
+
     private async Task<TaskModel> GetByIdOrThrowAsync(Guid taskId, CancellationToken cancellationToken)
     {
         var task = await taskRepository.GetByIdAsync(taskId, cancellationToken) ??
-                    throw new HttpRequestException(HttpRequestError.Unknown,
-                        statusCode: HttpStatusCode.NotFound, message: "Entity not found");
+                   throw new NotFoundException<TaskModel>();
 
         return task;
     }
 
-    private bool IsTaskCreator(TaskDto taskDto, Guid userId) => taskDto.CreatorId == userId;
-    
-    private bool IsTaskPerformer(TaskDto taskDto, Guid userId) => taskDto.PerformerId == userId;
+    private static void ValidateTaskCreatorRights(TaskDto task, Guid userId)
+    {
+        if (task.CreatorId != userId)
+            throw new ForbiddenException("FORBIDDEN");
+    }
+
+    private static void ValidateTaskPerformerRights(TaskDto task, Guid userId)
+    {
+        if (task.PerformerId != userId)
+            throw new ForbiddenException("FORBIDDEN");
+    }
 }
