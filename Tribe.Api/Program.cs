@@ -25,7 +25,7 @@ services.AddCors();
 var app = builder.Build();
 
 app.UseMiddleware<TransactionsMiddleware>();
-app.UseMiddleware<ValidationMiddleware>();
+app.UseMiddleware<ClientErrorsMiddleware>();
 
 await app.Migrate();
 

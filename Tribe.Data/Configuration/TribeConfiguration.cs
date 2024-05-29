@@ -3,8 +3,6 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Tribe.Data.Configuration.Extensions;
 using Tribe.Domain.Database.Configuration;
 using Tribe.Domain.Models.Tribe;
-using Tribe.Domain.Models.User;
-
 using tribeModel = Tribe.Domain.Models.Tribe.Tribe;
 
 namespace Tribe.Data.Configuration;
@@ -15,13 +13,13 @@ public class TribeConfiguration : BaseConfiguration<tribeModel>
     {
         typeBuilder.Property(tc => tc.Positions)
             .HasJsonConversion<IEnumerable<UserPosition>, List<UserPosition>>();
-        
+
         typeBuilder
             .HasOne(t => t.Creator)
             .WithMany()
             .HasForeignKey(t => t.CreatorId)
             .OnDelete(DeleteBehavior.Restrict);
-        
+
         typeBuilder
             .HasMany(t => t.Participants)
             .WithMany(u => u.Tribes)

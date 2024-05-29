@@ -10,7 +10,7 @@ public class TaskRepository(IDataContext dataContext) : ITaskRepository
     public async Task<bool> CreateAsync(TaskModel task, CancellationToken cancellationToken)
     {
         await dataContext.Tasks.AddAsync(task, cancellationToken);
-        
+
         return await dataContext.SaveEntitiesAsync(cancellationToken);
     }
 
@@ -19,10 +19,10 @@ public class TaskRepository(IDataContext dataContext) : ITaskRepository
         var currentTask = await dataContext.Tasks.FirstOrDefaultAsync(x => x.Id == task.Id, cancellationToken);
         if (currentTask == null)
             return default;
-        
+
         currentTask.Name = task.Name;
         currentTask.Content = task.Content;
-        
+
         await dataContext.SaveEntitiesAsync(cancellationToken);
 
         return currentTask;
@@ -37,7 +37,8 @@ public class TaskRepository(IDataContext dataContext) : ITaskRepository
             .FirstOrDefaultAsync(x => x.Id == taskId, cancellationToken);
     }
 
-    public async Task<IEnumerable<TaskModel>> GetGivenAsync(Guid userId, Guid tribeId, CancellationToken cancellationToken)
+    public async Task<IEnumerable<TaskModel>> GetGivenAsync(Guid userId, Guid tribeId,
+        CancellationToken cancellationToken)
     {
         return await dataContext.Tasks
             .Include(x => x.Creator)
@@ -46,8 +47,9 @@ public class TaskRepository(IDataContext dataContext) : ITaskRepository
             .Where(x => x.Creator.Id == userId && x.Tribe.Id == tribeId)
             .ToListAsync(cancellationToken);
     }
-    
-    public async Task<IEnumerable<TaskModel>> GetTakenAsync(Guid userId, Guid tribeId, CancellationToken cancellationToken)
+
+    public async Task<IEnumerable<TaskModel>> GetTakenAsync(Guid userId, Guid tribeId,
+        CancellationToken cancellationToken)
     {
         return await dataContext.Tasks
             .Include(x => x.Creator)
@@ -62,7 +64,7 @@ public class TaskRepository(IDataContext dataContext) : ITaskRepository
         var taskToDelete = await dataContext.Tasks.FirstOrDefaultAsync(x => x.Id == taskId, cancellationToken);
         if (taskToDelete == default)
             return false;
-        
+
         dataContext.Tasks.Remove(taskToDelete);
 
         return await dataContext.SaveEntitiesAsync(cancellationToken);

@@ -2,7 +2,7 @@ namespace Tribe.Domain.Models.Task;
 
 public enum TaskStatus
 {
-    Created, 
+    Created,
     Processing,
     Complete
 }

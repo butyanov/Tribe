@@ -1,6 +1,5 @@
-using System.Net;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Tribe.Core.ClientExceptions;
 using Tribe.Core.Mappers.DtoToModel;
 using Tribe.Domain.Dto;
 using Tribe.Domain.Facades;
@@ -12,7 +11,10 @@ using TribeModel = Tribe.Domain.Models.Tribe.Tribe;
 
 namespace Tribe.Core.Facades;
 
-public class TribeFacade(ITribeRepository tribeRepository, UserManager<ApplicationUser> userManager, IUserService userService) : ITribeFacade
+public class TribeFacade(
+    ITribeRepository tribeRepository,
+    UserManager<ApplicationUser> userManager,
+    IUserService userService) : ITribeFacade
 {
     public async Task<TribeDto> GetMyTribeAsync(Guid tribeId, CancellationToken cancellationToken)
     {
@@ -20,8 +22,7 @@ public class TribeFacade(ITribeRepository tribeRepository, UserManager<Applicati
         var tribes = (await tribeRepository.GetByUserAsync(userId, cancellationToken)).ToArray();
 
         var wantedTribe = tribes.FirstOrDefault(x => x.Id == tribeId)
-                          ?? throw new HttpRequestException(HttpRequestError.Unknown,
-                              statusCode: HttpStatusCode.NotFound, message: "Entity not found");
+                          ?? throw new NotFoundException<TribeModel>();
 
         return wantedTribe.ToDto();
     }
@@ -34,32 +35,26 @@ public class TribeFacade(ITribeRepository tribeRepository, UserManager<Applicati
 
     public async Task<bool> CreateAsync(TribeDto tribeDto, CancellationToken cancellationToken)
     {
-        var currentUser = userManager.Users.FirstOrDefault(x => x.Id == userService.GetUserIdOrThrow()) ??
-                          throw new HttpRequestException(HttpRequestError.Unknown,
-                              statusCode: HttpStatusCode.NotFound, message: "Entity not found");
+        var currentUser = userManager.Users.FirstOrDefault(x => x.Id == userService.GetUserIdOrThrow())
+                          ?? throw new NotFoundException<ApplicationUser>();
+
         var tribeMembers = new List<ApplicationUser>();
 
         tribeDto.CreatorId = currentUser.Id;
         tribeMembers.Add(currentUser);
-        
+
         foreach (var user in userManager.Users)
-        {
             if (tribeDto.ParticipantsIds.Contains(user.Id))
                 tribeMembers.Add(user);
-        }
 
         var tribeModel = tribeDto.ToModel(currentUser, tribeMembers.ToHashSet());
-        
+
         if (tribeModel.Participants.Count != tribeModel.Positions.Count())
-            throw new HttpRequestException(HttpRequestError.Unknown,
-                statusCode: HttpStatusCode.BadRequest, message: "Inconsistent hiearchy");
-        
-        var alreadyExists =
-            (await tribeRepository.GetByUserAsync(currentUser.Id, cancellationToken)).Any(x => x.Name == tribeDto.Name);
-        if (alreadyExists) 
-            throw new HttpRequestException(HttpRequestError.Unknown,
-                                  statusCode: HttpStatusCode.BadRequest, message: "Entity already exists");
-        
+            throw new ClientException("Inconsistent hiearchy");
+
+        if ((await tribeRepository.GetByUserAsync(currentUser.Id, cancellationToken)).Any(x => x.Name == tribeDto.Name))
+            throw new AlreadyExistsException("Task");
+
         return await tribeRepository.CreateAsync(tribeModel, cancellationToken);
     }
 
@@ -68,26 +63,22 @@ public class TribeFacade(ITribeRepository tribeRepository, UserManager<Applicati
     {
         var ownerId = userService.GetUserIdOrThrow();
         var tribeModel = await GetByIdOrThrowAsync(tribeId, cancellationToken);
-        
-        if (!IsTribeOwner(tribeModel, ownerId))
-            throw new HttpRequestException(HttpRequestError.Unknown,
-                statusCode: HttpStatusCode.Forbidden, message: "Not enough rights");
-        
+
+        ValidateTribeRights(tribeModel, ownerId);
+
         if (tribeModel.Participants.Select(p => p.Id).Contains(userId))
-            throw new BadHttpRequestException("User already invited", 409, new ArgumentException());
-        
+            throw new ClientException("User already invited");
+
         foreach (var member in leads.Concat(subordinates).ToArray())
         {
             var tribeMembers = tribeModel.Participants.ToArray();
             if (!tribeMembers.Select(x => x.Id).Contains(member))
-                throw new HttpRequestException(HttpRequestError.Unknown,
-                    statusCode: HttpStatusCode.BadRequest, message: $"{member} is not a member of tribe");
+                throw new ClientException($"{member} is not a member of tribe");
         }
 
-        var appUser = userManager.Users.FirstOrDefault(x => x.Id == userId) ?? 
-                      throw new HttpRequestException(HttpRequestError.Unknown,
-                        statusCode: HttpStatusCode.NotFound, message: $"User not found");
-        
+        var appUser = userManager.Users.FirstOrDefault(x => x.Id == userId) ??
+                      throw new NotFoundException<ApplicationUser>();
+
         tribeModel.Participants = tribeModel.Participants.Append(appUser).ToArray();
         tribeModel.Positions = tribeModel.Positions.Append(new UserPosition
         {
@@ -106,23 +97,18 @@ public class TribeFacade(ITribeRepository tribeRepository, UserManager<Applicati
     {
         var ownerId = userService.GetUserIdOrThrow();
         var tribeModel = await GetByIdOrThrowAsync(tribeId, cancellationToken);
-        
-        if (!IsTribeOwner(tribeModel, ownerId))
-            // TODO: HttpRequestException - это все пятисотые
-            throw new HttpRequestException(HttpRequestError.Unknown,
-                statusCode: HttpStatusCode.Forbidden, message: "Not enough rights");
-        
+
+        ValidateTribeRights(tribeModel, ownerId);
+
         if (ownerId == userId)
-            throw new HttpRequestException(HttpRequestError.Unknown,
-                statusCode: HttpStatusCode.BadRequest, message: "You cannot kick yourself from your own tribe");
-        
-        var appUser = userManager.Users.FirstOrDefault(x => x.Id == userId) ?? 
-                      throw new HttpRequestException(HttpRequestError.Unknown,
-                          statusCode: HttpStatusCode.NotFound, message: $"User not found");
+            throw new ClientException("You cannot kick yourself from your own tribe");
+
+        var appUser = userManager.Users.FirstOrDefault(x => x.Id == userId) ??
+                      throw new NotFoundException<ApplicationUser>();
 
         tribeModel.Participants.Remove(appUser);
         tribeModel.Positions = tribeModel.Positions.Where(x => x.UserId != appUser.Id).ToArray();
-        
+
         await tribeRepository.UpdateAsync(tribeModel, cancellationToken);
 
         return true;
@@ -132,13 +118,11 @@ public class TribeFacade(ITribeRepository tribeRepository, UserManager<Applicati
     {
         var ownerId = userService.GetUserIdOrThrow();
         var tribeModel = await GetByIdOrThrowAsync(tribeId, cancellationToken);
-        
-        if (!IsTribeOwner(tribeModel, ownerId))
-            throw new HttpRequestException(HttpRequestError.Unknown,
-                statusCode: HttpStatusCode.Forbidden, message: "Not enough rights");
+
+        ValidateTribeRights(tribeModel, ownerId);
 
         tribeModel.Name = newName;
-        
+
         await tribeRepository.UpdateAsync(tribeModel, cancellationToken);
 
         return true;
@@ -148,20 +132,21 @@ public class TribeFacade(ITribeRepository tribeRepository, UserManager<Applicati
     {
         var ownerId = userService.GetUserIdOrThrow();
         var tribeModel = await GetByIdOrThrowAsync(tribeId, cancellationToken);
-        
-        if (!IsTribeOwner(tribeModel, ownerId))
-            throw new HttpRequestException(HttpRequestError.Unknown,
-                statusCode: HttpStatusCode.Forbidden, message: "Not enough rights");
+
+        ValidateTribeRights(tribeModel, ownerId);
 
         return await tribeRepository.DeleteAsync(tribeId, cancellationToken);
     }
-    
+
     private async Task<TribeModel> GetByIdOrThrowAsync(Guid tribeId, CancellationToken cancellationToken)
     {
         return await tribeRepository.GetByIdAsync(tribeId, cancellationToken) ??
-                    throw new HttpRequestException(HttpRequestError.Unknown,
-                        statusCode: HttpStatusCode.NotFound, message: "Entity not found");
+               throw new NotFoundException<TribeModel>();
     }
 
-    private static bool IsTribeOwner(TribeModel tribe, Guid userId) => tribe.CreatorId == userId;
+    private static void ValidateTribeRights(TribeModel tribe, Guid userId)
+    {
+        if (tribe.CreatorId != userId)
+            throw new ForbiddenException("FORBIDDEN");
+    }
 }

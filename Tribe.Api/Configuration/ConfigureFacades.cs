@@ -5,8 +5,10 @@ namespace Tribe.Api.Configuration;
 
 public static class ConfigureFacades
 {
-    public static void AddFacades(this IServiceCollection services) =>
+    public static void AddFacades(this IServiceCollection services)
+    {
         services
             .AddScoped<ITribeFacade, TribeFacade>()
             .AddScoped<ITaskFacade, TaskFacade>();
+    }
 }

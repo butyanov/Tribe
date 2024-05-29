@@ -20,7 +20,7 @@ public static class TaskToDtoMappingExtensions
         };
     }
 
-    public static Task ToModel(this TaskDto taskDto, 
+    public static Task ToModel(this TaskDto taskDto,
         Domain.Models.Tribe.Tribe tribe,
         ApplicationUser creator,
         ApplicationUser performer)

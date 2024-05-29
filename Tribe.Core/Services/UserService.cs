@@ -1,6 +1,6 @@
-using System.Net;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using Tribe.Core.ClientExceptions;
 using Tribe.Domain.Services;
 
 namespace Tribe.Core.Services;
@@ -16,6 +16,8 @@ public class UserService(IHttpContextAccessor httpContextAccessor) : IUserServic
 
     public bool IsAuthenticated => UserId != null;
 
-    public Guid GetUserIdOrThrow() => UserId ?? throw new HttpRequestException(HttpRequestError.UserAuthenticationError,
-        statusCode: HttpStatusCode.Unauthorized);
+    public Guid GetUserIdOrThrow()
+    {
+        return UserId ?? throw new UnauthorizedException("UNAUTHORIZED");
+    }
 }
