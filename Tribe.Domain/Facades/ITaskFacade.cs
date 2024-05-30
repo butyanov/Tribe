@@ -9,6 +9,9 @@ public interface ITaskFacade
     public Task<TaskDto> GetMyTaskAsync(Guid taskId, CancellationToken cancellationToken);
     public Task<IReadOnlyCollection<TaskDto>> GetAllGivenTasksAsync(Guid tribeId, CancellationToken cancellationToken);
     public Task<IReadOnlyCollection<TaskDto>> GetAllTakenTasksAsync(Guid tribeId, CancellationToken cancellationToken);
+    
+    public Task<IReadOnlyCollection<TaskDto>> GetAllGivenTasksAsync(Guid tribeId, Guid userId, CancellationToken cancellationToken);
+    public Task<IReadOnlyCollection<TaskDto>> GetAllTakenTasksAsync(Guid tribeId, Guid userId, CancellationToken cancellationToken);
 
     public Task<bool> GiveTaskAsync(TaskDto taskDto, CancellationToken cancellationToken);
     public Task<bool> ChangeNameAsync(Guid taskId, string newName, CancellationToken cancellationToken);
