@@ -77,6 +77,50 @@ public class TaskController(ITaskFacade taskFacade) : ControllerBase
 
         return tasksResponse;
     }
+    
+    [Authorize]
+    [HttpGet]
+    [Route("get-all-given/{tribeId:guid}/{userId:guid}")]
+    public async Task<IReadOnlyCollection<TaskResponse>> GetAllGivenTasksAsync([FromRoute] Guid tribeId, [FromRoute] Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var tasks = await taskFacade.GetAllGivenTasksAsync(tribeId, userId, cancellationToken);
+
+        var tasksResponse = tasks.Select(task => new TaskResponse
+        {
+            Id = task.Id,
+            CreatorId = task.CreatorId,
+            TribeId = task.TribeId,
+            Name = task.Name,
+            Status = task.Status,
+            Content = task.Content,
+            PerformerId = task.PerformerId
+        }).ToArray();
+
+        return tasksResponse;
+    }
+
+    [Authorize]
+    [HttpGet]
+    [Route("get-all-taken-by-user/{tribeId:guid}/{userId:guid}")]
+    public async Task<IReadOnlyCollection<TaskResponse>> GetAllTakenTasksAsync([FromRoute] Guid tribeId, [FromRoute] Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var tasks = await taskFacade.GetAllTakenTasksAsync(tribeId, userId, cancellationToken);
+
+        var tasksResponse = tasks.Select(task => new TaskResponse
+        {
+            Id = task.Id,
+            CreatorId = task.CreatorId,
+            TribeId = task.TribeId,
+            Name = task.Name,
+            Status = task.Status,
+            Content = task.Content,
+            PerformerId = task.PerformerId
+        }).ToArray();
+
+        return tasksResponse;
+    }
 
     [Authorize]
     [HttpPost]

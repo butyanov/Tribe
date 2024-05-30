@@ -11,6 +11,8 @@ using TribeModel = Tribe.Domain.Models.Tribe.Tribe;
 
 namespace Tribe.Core.Facades;
 
+// TODO добавить валидацию
+// TODO возвращать больше информации после мутирующих операций
 public class TribeFacade(
     ITribeRepository tribeRepository,
     UserManager<ApplicationUser> userManager,
@@ -75,10 +77,22 @@ public class TribeFacade(
             if (!tribeMembers.Select(x => x.Id).Contains(member))
                 throw new ClientException($"{member} is not a member of tribe");
         }
-
+        
         var appUser = userManager.Users.FirstOrDefault(x => x.Id == userId) ??
                       throw new NotFoundException<ApplicationUser>();
-
+        
+        foreach (var leadId in leads.ToArray())
+        {
+            var leadPosition = tribeModel.Positions.First(x => x.UserId == leadId);
+            leadPosition.ChildrenIds = leadPosition.ChildrenIds.Append(appUser.Id);
+        }
+        
+        foreach (var subId in subordinates.ToArray())
+        {
+            var subPosition = tribeModel.Positions.First(x => x.UserId == subId);
+            subPosition.ParentIds = subPosition.ParentIds.Append(appUser.Id);
+        }
+        
         tribeModel.Participants = tribeModel.Participants.Append(appUser).ToArray();
         tribeModel.Positions = tribeModel.Positions.Append(new UserPosition
         {

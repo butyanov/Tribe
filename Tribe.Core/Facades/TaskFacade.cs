@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Identity;
 using Tribe.Core.ClientExceptions;
 using Tribe.Core.Mappers.DtoToModel;
 using Tribe.Domain.Dto;
 using Tribe.Domain.Facades;
 using Tribe.Domain.Models.Task;
 using Tribe.Domain.Models.Tribe;
+using Tribe.Domain.Models.User;
 using Tribe.Domain.Repositories;
 using Tribe.Domain.Services;
 using TaskModel = Tribe.Domain.Models.Task.Task;
@@ -11,7 +13,7 @@ using TaskStatus = Tribe.Domain.Models.Task.TaskStatus;
 
 namespace Tribe.Core.Facades;
 
-public class TaskFacade(ITaskRepository taskRepository, ITribeRepository tribeRepository, IUserService userService)
+public class TaskFacade(ITaskRepository taskRepository, ITribeRepository tribeRepository, IUserService userService, UserManager<ApplicationUser> userManager)
     : ITaskFacade
 {
     public async Task<TaskDto> GetMyTaskAsync(Guid taskId, CancellationToken cancellationToken)
@@ -43,6 +45,30 @@ public class TaskFacade(ITaskRepository taskRepository, ITribeRepository tribeRe
 
         var takenTasks =
             (await taskRepository.GetTakenAsync(userId, tribeId, cancellationToken)).Select(x => x.ToDto());
+
+        return takenTasks.ToArray();
+    }
+    
+    public async Task<IReadOnlyCollection<TaskDto>> GetAllGivenTasksAsync(Guid tribeId, Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var user = userManager.Users.FirstOrDefault(u => u.Id == userId) ??
+                   throw new NotFoundException<ApplicationUser>();
+        
+        var givenTasks =
+            (await taskRepository.GetGivenAsync(user.Id, tribeId, cancellationToken)).Select(x => x.ToDto());
+
+        return givenTasks.ToArray();
+    }
+
+    public async Task<IReadOnlyCollection<TaskDto>> GetAllTakenTasksAsync(Guid tribeId, Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var user = userManager.Users.FirstOrDefault(u => u.Id == userId) ??
+                   throw new NotFoundException<ApplicationUser>();
+        
+        var takenTasks =
+            (await taskRepository.GetTakenAsync(user.Id, tribeId, cancellationToken)).Select(x => x.ToDto());
 
         return takenTasks.ToArray();
     }
